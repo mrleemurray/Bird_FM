@@ -1,8 +1,12 @@
 {
     "countries": [
-        "United Kingdom",
         "United States",
         "Australia",
-        "Malaysia"
+        "Malaysia",
+        "Indonesia",
+        "Germany",
+        "Austria",
+        "Czech Republic",
+        "France"
     ]
 }
