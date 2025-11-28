@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}Logs - BirdFM{% endblock %}
+
+{% block content %}
+<div class="logs-page">
+    <h2>Application Logs</h2>
+
+    <div class="card">
+        <div class="logs-header">
+            <h3>Recent Log Entries (Last 100 lines)</h3>
+            <button onclick="location.reload()" class="btn btn-secondary btn-sm">Refresh</button>
+        </div>
+        
+        <div class="logs-container">
+            <pre class="logs-content">{% for line in logs %}{{ line }}{% endfor %}</pre>
+        </div>
+
+        <div class="logs-footer">
+            <p class="form-help">Logs are automatically updated. Click Refresh to see the latest entries.</p>
+        </div>
+    </div>
+
+    <div class="card info-card">
+        <h3>Log Files Location</h3>
+        <p>Full logs are stored in the following files on the Raspberry Pi:</p>
+        <ul>
+            <li><code>logs/birdfm.log</code> - Main application logs</li>
+            <li><code>logs/birdfm-error.log</code> - Error logs</li>
+            <li><code>logs/webserver.log</code> - Web interface logs</li>
+        </ul>
+        <p>You can also view system service logs via SSH with: <code>journalctl -u birdfm.service -f</code></p>
+    </div>
+</div>
+{% endblock %}

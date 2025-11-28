@@ -5,6 +5,7 @@ A Raspberry Pi Zero W application that plays bird songs from the Xeno-Canto API.
 ## Features
 
 - ✅ **API Key Support**: Updated to work with Xeno-Canto's new API authentication
+- 🌐 **Web Configuration Interface**: Configure settings from any device on your network
 - 🗄️ **Smart Caching**: Caches API responses for 24 hours to reduce API calls
 - ⏱️ **Rate Limiting**: 2-second delay between API calls to avoid spamming
 - 🔄 **Retry Logic**: Automatic retry with exponential backoff for failed requests
@@ -39,15 +40,14 @@ cd ~/BirdFM
 ./install.sh
 ```
 
-3. Edit the config file to add your API key:
-```bash
-nano config.json
-```
-
-4. Start the service:
+3. Start the services:
 ```bash
 sudo systemctl start birdfm
+sudo systemctl start birdfm-web
 ```
+
+4. Configure via web interface:
+Open `http://birdbox.local:5000` in your browser to set your API key and countries.
 
 ## Installation Scripts
 
@@ -80,23 +80,72 @@ Remove BirdFM service from Pi:
 - Removes systemd configuration
 - Leaves application files intact
 
+## Web Configuration Interface
+
+BirdFM includes a web-based configuration interface that allows you to manage settings without SSH access.
+
+### Access the Web Interface
+
+After installation, access the web interface from any device on your network:
+
+```
+http://birdbox.local:5000
+```
+
+Or use the Raspberry Pi's IP address:
+```
+http://192.168.1.xxx:5000
+```
+
+### Web Interface Features
+
+- **Dashboard**: View service status, API configuration, and active countries
+- **API Settings**: Configure your Xeno-Canto API key
+- **Countries Management**: Add/remove countries with one-click suggestions
+- **Service Control**: Restart the BirdFM service directly from the web
+- **Log Viewer**: View recent application logs in real-time
+
+### Security Note
+
+The web interface runs on your local network only. For production use:
+1. Change the default secret key in `web_server.py`
+2. Consider adding authentication
+3. Use a reverse proxy with HTTPS if exposing to the internet
+
 ## Service Management
 
-The installation creates a systemd service that:
+The installation creates two systemd services:
+
+### BirdFM Main Service
+- ✅ Plays bird songs automatically
 - ✅ Starts automatically on boot
 - ✅ Restarts automatically on crash (10 second delay)
-- ✅ Recovers from errors automatically
 - ✅ Logs to `logs/birdfm.log` and `logs/birdfm-error.log`
+
+### BirdFM Web Service
+- ✅ Provides web configuration interface
+- ✅ Starts automatically on boot
+- ✅ Restarts automatically on crash
+- ✅ Logs to `logs/webserver.log` and `logs/webserver-error.log`
 
 ### Service Commands
 
 ```bash
+# Main BirdFM service
 sudo systemctl start birdfm      # Start the service
 sudo systemctl stop birdfm       # Stop the service
 sudo systemctl restart birdfm    # Restart the service
 sudo systemctl status birdfm     # Check status
-sudo systemctl enable birdfm     # Enable auto-start on boot
-sudo systemctl disable birdfm    # Disable auto-start
+
+# Web interface service
+sudo systemctl start birdfm-web      # Start the web interface
+sudo systemctl stop birdfm-web       # Stop the web interface
+sudo systemctl restart birdfm-web    # Restart the web interface
+sudo systemctl status birdfm-web     # Check status
+
+# Both services
+sudo systemctl enable birdfm birdfm-web     # Enable auto-start on boot
+sudo systemctl disable birdfm birdfm-web    # Disable auto-start
 ```
 
 ### View Logs
@@ -104,20 +153,31 @@ sudo systemctl disable birdfm    # Disable auto-start
 ```bash
 # Application logs
 tail -f logs/birdfm.log
-tail -f birdfm.log
+tail -f logs/webserver.log
 
 # Service logs
 journalctl -u birdfm.service -f
+journalctl -u birdfm-web.service -f
 
 # Error logs
 tail -f logs/birdfm-error.log
+tail -f logs/webserver-error.log
 ```
 
 ## Configuration
 
-### API Key Setup
+### Method 1: Web Interface (Recommended)
 
-**Option A: Config File (Recommended for Pi)**
+The easiest way to configure BirdFM is through the web interface:
+
+1. Open `http://birdbox.local:5000` in your browser
+2. Navigate to **API Settings** and enter your Xeno-Canto API key
+3. Navigate to **Countries** to select which countries' bird songs to play
+4. Click **Save** and restart the service from the dashboard
+
+### Method 2: Manual Configuration (Advanced)
+
+**API Key Setup via Config File**
 
 ```bash
 nano config.json
@@ -130,13 +190,13 @@ Add your key:
 }
 ```
 
-**Option B: Environment Variable**
+**API Key via Environment Variable**
 
 ```bash
 export XENO_CANTO_API_KEY="your_api_key_here"
 ```
 
-### Countries Configuration
+**Countries Configuration**
 
 Edit `countries.json` to specify which countries' bird songs to play:
 
@@ -183,18 +243,56 @@ tail -f birdfm.log
 
 ## Troubleshooting
 
+### Cannot access web interface
+- Check service status: `sudo systemctl status birdfm-web`
+- Verify port 5000 is not blocked by firewall
+- Try using IP address instead of hostname: `http://192.168.1.xxx:5000`
+- View logs: `tail -f logs/webserver.log`
+
 ### Audio playback issues
 - Ensure `mpg123` is installed: `sudo apt-get install mpg123`
 - Check audio output: `speaker-test -t wav -c 2`
+- View logs: `tail -f logs/birdfm.log`
 
 ### API errors
-- Verify your API key is correct
-- Check `birdfm.log` for error messages
+- Verify your API key is correct via the web interface or `config.json`
+- Check `logs/birdfm.log` for error messages
 - Ensure internet connection is working
+- Test API with: `python3 test_api.py`
 
 ### High memory usage
-- Reduce `MAX_RECORDINGS_PER_COUNTRY` in the script
+- Reduce `MAX_RECORDINGS_PER_COUNTRY` in `BirdFM.py`
 - Increase `CACHE_EXPIRY_HOURS` to reduce API calls
+- Restart services to clear memory
+
+### Service not starting
+- Check status: `sudo systemctl status birdfm birdfm-web`
+- View errors: `journalctl -u birdfm.service -n 50`
+- Ensure virtual environment is activated: `source venv/bin/activate`
+- Verify all dependencies are installed: `pip list`
+
+## About Bird Feathers
+
+Bird feathers are remarkable structures that serve multiple functions beyond just flight. Understanding feather types can enhance your bird watching experience:
+
+### Feather Types
+- **Contour Feathers**: The outer layer that gives birds their shape and color
+- **Down Feathers**: Fluffy insulation feathers that trap air for warmth
+- **Flight Feathers**: Specialized wing and tail feathers for aerodynamics
+- **Filoplumes**: Sensory feathers that detect air movement and feather position
+
+### Interesting Facts
+- Birds molt (shed and regrow) their feathers regularly to maintain flight capability
+- Feather colors come from pigments and microscopic structures that reflect light
+- Some birds can control individual feathers for precise flight adjustments
+- Feathers are made of keratin, the same protein found in human hair and nails
+
+### Identification Tips
+- Look for distinctive feather patterns and colors when identifying birds
+- Wing bars, eye rings, and tail patterns are key field marks
+- Breeding vs. non-breeding plumage can vary dramatically in some species
+
+For more detailed bird identification information, check out the `BIRD_SPECIES_GUIDE.md` file.
 
 ## License
 

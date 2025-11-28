@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}BirdFM Dashboard{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <h2>Dashboard</h2>
+
+    <div class="status-cards">
+        <div class="card status-card">
+            <h3>Service Status</h3>
+            <div class="status-indicator status-{{ service_status }}">
+                <span class="status-dot"></span>
+                <span class="status-text">{{ service_status }}</span>
+            </div>
+            <form method="POST" action="{{ url_for('service_restart') }}">
+                <button type="submit" class="btn btn-primary" onclick="return confirm('Restart BirdFM service?')">
+                    Restart Service
+                </button>
+            </form>
+        </div>
+
+        <div class="card">
+            <h3>System Control</h3>
+            <p>Reboot the Raspberry Pi. The web interface will be unavailable for about 30-60 seconds during restart.</p>
+            <button type="button" class="btn btn-warning" onclick="rebootSystem()">
+                Reboot Raspberry Pi
+            </button>
+        </div>
+
+        <div class="card">
+            <h3>API Configuration</h3>
+            {% if api_key_configured %}
+                <p class="status-success">✓ API Key Configured</p>
+                <p class="api-key-masked">{{ api_key_masked }}</p>
+            {% else %}
+                <p class="status-warning">⚠ No API Key Set</p>
+                <p>Configure your Xeno-Canto API key to enable bird sound playback.</p>
+            {% endif %}
+            <a href="{{ url_for('settings') }}" class="btn btn-secondary">Configure API</a>
+        </div>
+
+        <div class="card">
+            <h3>Countries</h3>
+            {% if countries %}
+                <p class="status-success">✓ {{ countries|length }} countries configured</p>
+                <ul class="country-list">
+                    {% for country in countries[:5] %}
+                        <li>{{ country }}</li>
+                    {% endfor %}
+                    {% if countries|length > 5 %}
+                        <li class="more-indicator">... and {{ countries|length - 5 }} more</li>
+                    {% endif %}
+                </ul>
+            {% else %}
+                <p class="status-warning">⚠ No Countries Set</p>
+            {% endif %}
+            <a href="{{ url_for('countries') }}" class="btn btn-secondary">Manage Countries</a>
+        </div>
+    </div>
+
+    <div class="info-section">
+        <h3>Quick Info</h3>
+        <div class="info-grid">
+            <div class="info-item">
+                <strong>Web Interface:</strong> Access this page from any device on your network at <code>http://birdbox.local:5000</code>
+            </div>
+            <div class="info-item">
+                <strong>Auto-Start:</strong> BirdFM service starts automatically on boot and recovers from errors
+            </div>
+            <div class="info-item">
+                <strong>Logs:</strong> View application logs in real-time from the Logs page
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

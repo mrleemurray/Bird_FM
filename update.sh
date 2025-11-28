@@ -12,14 +12,23 @@ echo "BirdFM Update Script"
 echo "======================================"
 echo ""
 
-# Check if service is running
+# Check if services are running
 if systemctl is-active --quiet birdfm.service 2>/dev/null; then
     echo "Stopping BirdFM service (requires sudo)..."
     sudo systemctl stop birdfm.service
-    RESTART_SERVICE=true
+    RESTART_BIRDFM=true
 else
-    echo "Service not running"
-    RESTART_SERVICE=false
+    echo "BirdFM service not running"
+    RESTART_BIRDFM=false
+fi
+
+if systemctl is-active --quiet birdfm-web.service 2>/dev/null; then
+    echo "Stopping BirdFM web service (requires sudo)..."
+    sudo systemctl stop birdfm-web.service
+    RESTART_WEB=true
+else
+    echo "BirdFM web service not running"
+    RESTART_WEB=false
 fi
 
 # Update Python packages if requirements changed
@@ -30,30 +39,51 @@ if [ -f "requirements.txt" ]; then
     pip install --upgrade -r requirements.txt
 fi
 
-# Reload systemd if service file changed
+# Reload systemd if service files changed
+SERVICE_UPDATED=false
 if [ -f "birdfm.service" ]; then
     echo ""
-    echo "Updating systemd service (requires sudo)..."
+    echo "Updating BirdFM systemd service (requires sudo)..."
     sudo cp birdfm.service /etc/systemd/system/birdfm.service
+    SERVICE_UPDATED=true
+fi
+
+if [ -f "birdfm-web.service" ]; then
+    echo ""
+    echo "Updating web interface systemd service (requires sudo)..."
+    sudo cp birdfm-web.service /etc/systemd/system/birdfm-web.service
+    SERVICE_UPDATED=true
+fi
+
+if [ "$SERVICE_UPDATED" = true ]; then
     sudo systemctl daemon-reload
 fi
 
-# Start the service if it was running
-if [ "$RESTART_SERVICE" = true ]; then
+# Start the services if they were running
+if [ "$RESTART_BIRDFM" = true ]; then
     echo ""
     echo "Starting BirdFM service..."
     sudo systemctl start birdfm.service
-    
+fi
+
+if [ "$RESTART_WEB" = true ]; then
     echo ""
-    echo "✅ Update complete!"
-    echo ""
+    echo "Starting BirdFM web service..."
+    sudo systemctl start birdfm-web.service
+fi
+
+echo ""
+echo "✅ Update complete!"
+echo ""
+
+# Show status of running services
+if [ "$RESTART_BIRDFM" = true ] || [ "$RESTART_WEB" = true ]; then
     echo "Service status:"
-    sudo systemctl status birdfm.service --no-pager
+    [ "$RESTART_BIRDFM" = true ] && sudo systemctl status birdfm.service --no-pager
+    [ "$RESTART_WEB" = true ] && sudo systemctl status birdfm-web.service --no-pager
 else
-    echo ""
-    echo "✅ Update complete!"
-    echo ""
-    echo "To start the service:"
+    echo "To start the services:"
     echo "  sudo systemctl start birdfm"
+    echo "  sudo systemctl start birdfm-web"
 fi
 echo ""

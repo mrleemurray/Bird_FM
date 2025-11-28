@@ -1,0 +1,19 @@
+[Unit]
+Description=BirdFM Web Configuration Interface
+After=network.target birdfm.service
+
+[Service]
+Type=simple
+User=lee
+WorkingDirectory=/home/lee/BirdFM
+Environment="PATH=/home/lee/BirdFM/venv/bin"
+ExecStart=/home/lee/BirdFM/venv/bin/python3 /home/lee/BirdFM/web_server.py
+Restart=always
+RestartSec=10
+
+# Logging
+StandardOutput=append:/home/lee/BirdFM/logs/webserver.log
+StandardError=append:/home/lee/BirdFM/logs/webserver-error.log
+
+[Install]
+WantedBy=multi-user.target
